@@ -1,0 +1,124 @@
+name: 🚀 CI/CD Go Server
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/ci-cd-go-server.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/ci-cd-go-server.yml'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and test'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: write
+  actions: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: 🔨 Test
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./server
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Generate & deploy coverage badge
+        run: |
+          go test -v ./... -covermode=count -coverprofile=coverage.out
+          COVER=$(go tool cover -func=coverage.out | awk '/total/ {print substr($3,1,length($3)-1)}')
+          COVER_INT=$(printf "%.0f" "$COVER")
+          if [ "$COVER_INT" -ge 80 ]; then COLOR=brightgreen
+          elif [ "$COVER_INT" -ge 60 ]; then COLOR=yellow
+          else COLOR=red; fi
+          git fetch origin
+          git checkout badges 2>/dev/null || git checkout -b badges origin/badges
+          git pull --rebase origin badges
+          mkdir -p badges
+          rm -f badges/coverage-go.svg
+          curl -s "https://img.shields.io/badge/Server_Coverage-${COVER}%25-${COLOR}.svg" -o coverage-go.svg
+          git config user.name "github-actions[bot]" && git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add coverage-go.svg
+          git commit -m "chore: update Go server coverage badge to ${COVER}%" || echo "No changes to commit"
+          git push origin badges
+          git checkout main
+
+  build:
+    name: 📦 Build
+    needs: test
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./server
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Build binary
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -v -x -ldflags="-s -w -X config.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X config.commitHash=$(git rev-parse HEAD)" \
+            -o check24-gendev-7-server-amd64 \
+            ./cmd/check24-gendev-7-server/main.go
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: check24-gendev-7-server-amd64
+          path: ./server/check24-gendev-7-server-amd64
+          retention-days: 5
+
+  deploy:
+    name: 🚀 Deploy
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: check24-gendev-7-server-amd64
+          path: ./server
+          
+      - name: Make binary executable
+        run: chmod +x ./server/check24-gendev-7-server-amd64
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+      - name: Deploy to Oracle Cloud
+        run: |
+          scp -B ./server/check24-gendev-7-server-amd64 \
+            ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:${{ secrets.OCI_DEPLOY_PATH }}/check24-gendev-7-server-amd64-new
+      
+      - name: Restart service
+        run: |
+          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} \
+            "cd ${{ secrets.OCI_DEPLOY_PATH }} && \
+             sudo chcon -t bin_t check24-gendev-7-server-amd64-new && \
+             mv -f check24-gendev-7-server-amd64-new check24-gendev-7-server-amd64 && \
+             sudo systemctl restart check24-gendev-7-server"
