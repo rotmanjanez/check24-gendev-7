@@ -1,0 +1,119 @@
+name: 🚀 CI/CD Client Website
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'client/**'
+      - '.github/workflows/ci-cd-client-website.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'client/**'
+      - '.github/workflows/ci-cd-client-website.yml'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and deploy'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+  pages: write
+
+jobs:
+  build:
+    name: 🏗️ Build Client
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./client
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: ⚡️ Cache npm
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '23'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run tests with coverage
+        run: npm run test:coverage
+
+      - name: 📤 Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-coverage
+          path: ./client/coverage
+          retention-days: 3
+
+      - name: Extract client coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Generate & deploy coverage badge
+        run: |
+          COVER=${{ steps.coverage.outputs.percentage }}
+          if [ "${COVER%.*}" -ge 80 ]; then COLOR=brightgreen
+          elif [ "${COVER%.*}" -ge 60 ]; then COLOR=yellow
+          else COLOR=red; fi
+          git fetch origin
+          git checkout badges 2>/dev/null || git checkout -b badges origin/badges
+          git pull --rebase origin badges
+          mkdir -p badges
+          rm -f badges/coverage-vue.svg
+          curl -s "https://img.shields.io/badge/Client_Coverage-${COVER}%25-${COLOR}.svg" -o badges/coverage-vue.svg
+          git config user.name "github-actions[bot]" && git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add badges/coverage-vue.svg
+          git commit -m "chore: update client coverage badge to ${COVER}%25" || echo "No changes to commit"
+          git push origin badges
+          git checkout main
+
+      - name: 🏗️ Build production assets
+        run: npm run build
+
+      - name: 📦 Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-build
+          path: ./client/dist
+          retention-days: 1
+
+  deploy:
+    name: 🚀 Deploy to GitHub Pages
+    needs: build
+    runs-on: self-hosted
+    if: ${{ needs.build.result == 'success' }}
+    steps:
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: client-build
+          path: ./dist
+
+      - name: 📤 Configure Pages branch
+        uses: actions/configure-pages@v2
+
+      - name: 🚚 Upload build output
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: 🚀 Deploy to gh-pages
+        uses: actions/deploy-pages@v4
