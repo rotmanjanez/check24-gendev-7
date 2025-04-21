@@ -21,6 +21,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Health'
           description: Successful health check
+        "500":
+          description: Internal server error
       summary: Health check endpoint
       tags:
       - Health
@@ -35,40 +37,374 @@ paths:
               schema:
                 $ref: '#/components/schemas/Version'
           description: Successful version retrieval
+        "500":
+          description: Internal server error
       summary: Version information endpoint
       tags:
       - System
+  /internet-products:
+    post:
+      description: Initiates retrieval of internet products and returns a product
+        version and a cursor to retrieve the first batch of products
+      operationId: initiateInternetProductsQuery
+      parameters:
+      - description: Providers to filter the products
+        explode: true
+        in: query
+        name: providers
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+        style: form
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Address'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternetProductsCursor'
+          description: Initial batch of internet products with a continuation cursor
+        "500":
+          description: Internal server error
+      tags:
+      - Internet Products
+  /internet-products/continue:
+    get:
+      description: Fetches the next batch of internet products using a continuation
+        cursor
+      operationId: continueInternetProductsQuery
+      parameters:
+      - description: Cursor to continue fetching products
+        explode: true
+        in: query
+        name: cursor
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternetProductsResponse'
+          description: Next batch of internet products
+        "202":
+          description: "Query is still in progress, no products available yet"
+        "400":
+          description: "Bad request, invalid cursor"
+        "404":
+          description: "Not found, cursor not found"
+        "500":
+          description: Internal server error
+      tags:
+      - Internet Products
+  /internet-products/share/{cursor}:
+    get:
+      description: Retrieves the shared internet products using a given cursor
+      operationId: getSharedInternetProducts
+      parameters:
+      - description: Cursor to retrieve the shared products
+        explode: true
+        in: path
+        name: cursor
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedInternetProductsResponse'
+          description: Successful retrieval of shared internet products
+        "400":
+          description: "Bad request, invalid cursor"
+        "404":
+          description: "Not found, cursor not found"
+        "500":
+          description: Internal server error
+      tags:
+      - Internet Products
+    post:
+      description: Shares the internet products with a given cursor. This cursor must
+        be the same as the one returned by the initial query and the query must have
+        completed.
+      operationId: shareInternetProducts
+      parameters:
+      - description: Cursor to share the products
+        explode: true
+        in: path
+        name: cursor
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Successful sharing of internet products
+        "400":
+          description: "Bad request, invalid cursor or query not completed"
+        "500":
+          description: Internal server error
+      tags:
+      - Internet Products
 components:
   schemas:
     Health:
       description: Health check response
-      example:
-        status: ok
       properties:
         status:
-          example: ok
           type: string
       type: object
       x-go-type: Health
     Version:
       description: Version information response
-      example:
-        version: 1.0.0
-        buildDate: 2025-04-21T12:00:00Z
-        commitHash: abc123def456
       properties:
         version:
           description: The semantic version of the API
-          example: 1.0.0
           type: string
         buildDate:
           description: The date and time when the API was built
-          example: 2025-04-21T12:00:00Z
           format: date-time
           type: string
         commitHash:
           description: The git commit hash of the API build
-          example: abc123def456
           type: string
       type: object
       x-go-type: Version
+    CountryCode:
+      description: ISO country code
+      enum:
+      - DE
+      - AT
+      - CH
+      type: string
+      x-go-type: CountryCode
+    Address:
+      properties:
+        street:
+          maxLength: 64
+          minLength: 1
+          type: string
+        houseNumber:
+          maxLength: 16
+          minLength: 1
+          type: string
+        city:
+          maxLength: 64
+          minLength: 2
+          type: string
+        postalCode:
+          maxLength: 5
+          minLength: 4
+          type: string
+        countryCode:
+          $ref: '#/components/schemas/CountryCode'
+      required:
+      - city
+      - countryCode
+      - postalCode
+      - street
+      type: object
+      x-go-type: Address
+    ConnectionType:
+      description: Type of internet connection
+      enum:
+      - DSL
+      - CABLE
+      - FIBER
+      - MOBILE
+      type: string
+      x-go-type: ConnectionType
+    SubsequentCost:
+      properties:
+        monthlyCostInCent:
+          minimum: 0
+          type: integer
+        startMonth:
+          minimum: 0
+          type: integer
+      required:
+      - monthlyCostInCent
+      - startMonth
+      type: object
+      x-go-type: SubsequentCost
+    Pricing:
+      properties:
+        monthlyCostInCent:
+          minimum: 0
+          type: integer
+        contractDurationInMonths:
+          minimum: 0
+          nullable: true
+          type: integer
+        minContractDurationInMonths:
+          minimum: 0
+          nullable: true
+          type: integer
+        maxAgeInJears:
+          minimum: 0
+          nullable: true
+          type: integer
+        minOrderValueInCent:
+          minimum: 0
+          nullable: true
+          type: integer
+        minAgeInYears:
+          minimum: 0
+          nullable: true
+          type: integer
+        installationServiceIncluded:
+          type: boolean
+        subsequentCosts:
+          allOf:
+          - $ref: '#/components/schemas/SubsequentCost'
+          nullable: true
+        AbsoluteDiscount:
+          allOf:
+          - $ref: '#/components/schemas/AbsoluteDiscount'
+          nullable: true
+        PercentageDiscount:
+          allOf:
+          - $ref: '#/components/schemas/PercentageDiscount'
+          nullable: true
+      required:
+      - monthlyCostInCent
+      type: object
+      x-go-type: Pricing
+    PercentageDiscount:
+      properties:
+        percentage:
+          format: uint32
+          maximum: 100
+          minimum: 0
+          type: integer
+        maxDiscountInCent:
+          format: uint32
+          minimum: 0
+          nullable: true
+          type: integer
+        durationInMonths:
+          format: uint32
+          minimum: 0
+          nullable: true
+          type: integer
+      required:
+      - percentage
+      - type
+      type: object
+      x-go-type: PercentageDiscount
+    AbsoluteDiscount:
+      properties:
+        valueInCent:
+          format: uint32
+          minimum: 0
+          type: integer
+        minOrderValueInCent:
+          format: uint32
+          minimum: 0
+          nullable: true
+          type: integer
+      required:
+      - type
+      - valueInCent
+      type: object
+      x-go-type: AbsoluteDiscount
+    ProductInfo:
+      properties:
+        speed:
+          description: in Mbps
+          minimum: 0
+          type: integer
+        connectionType:
+          $ref: '#/components/schemas/ConnectionType'
+        tv:
+          maxLength: 64
+          minLength: 1
+          nullable: true
+          type: string
+        unthrottledCapacityMb:
+          minimum: 0
+          nullable: true
+          type: integer
+      required:
+      - connectionType
+      - speed
+      type: object
+      x-go-type: ProductInfo
+    InternetProduct:
+      properties:
+        id:
+          maxLength: 64
+          minLength: 1
+          type: string
+        provider:
+          maxLength: 64
+          minLength: 1
+          type: string
+        name:
+          maxLength: 128
+          minLength: 1
+          type: string
+        description:
+          maxLength: 64
+          minLength: 1
+          type: string
+        dateOffered:
+          description: Date when the product was offered
+          format: date-time
+          type: string
+        productInfo:
+          $ref: '#/components/schemas/ProductInfo'
+        pricing:
+          $ref: '#/components/schemas/Pricing'
+      required:
+      - dateOffered
+      - id
+      - name
+      - pricing
+      - productInfo
+      - provider
+      type: object
+      x-go-type: InternetProduct
+    InternetProductsCursor:
+      description: Response containing a list of internet products and version info
+      properties:
+        version:
+          type: string
+        nextCursor:
+          description: Cursor to retrieve the first batch of products
+          type: string
+      x-go-type: InternetProductsResponse
+    InternetProductsResponse:
+      description: Response containing a list of internet products
+      properties:
+        products:
+          items:
+            $ref: '#/components/schemas/InternetProduct'
+          type: array
+        nextCursor:
+          description: "Cursor to retrieve the next batch of products, or null if\
+            \ finished"
+          type: string
+    SharedInternetProductsResponse:
+      description: Response containing a list of shared internet products
+      properties:
+        products:
+          items:
+            $ref: '#/components/schemas/InternetProduct'
+          type: array
+        version:
+          type: string
+        Address:
+          $ref: '#/components/schemas/Address'
+      x-go-type: SharedInternetProductsResponse

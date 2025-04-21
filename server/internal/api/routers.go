@@ -13,7 +13,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/mux"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -23,6 +22,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/rotmanjanez/check24-gendev-7/pkg/models"
 )
 
 // A Route defines the parameters for an api endpoint
@@ -39,10 +41,6 @@ type Routes map[string]Route
 type Router interface {
 	Routes() Routes
 }
-
-const errMsgRequiredMissing = "required parameter is missing"
-const errMsgMinValueConstraint = "provided parameter is not respecting minimum value constraint"
-const errMsgMaxValueConstraint = "provided parameter is not respecting maximum value constraint"
 
 // NewRouter creates a new router for any number of api routers
 func NewRouter(routers ...Router) *mux.Router {
@@ -243,7 +241,7 @@ func WithRequire[T Number | string | bool](parse ParseString[T]) Operation[T] {
 	var empty T
 	return func(actual string) (T, bool, error) {
 		if actual == "" {
-			return empty, false, errors.New(errMsgRequiredMissing)
+			return empty, false, errors.New(models.ErrMsgRequiredMissing)
 		}
 
 		v, err := parse(actual)
@@ -274,7 +272,7 @@ type Constraint[T Number | string | bool] func(actual T) error
 func WithMinimum[T Number](expected T) Constraint[T] {
 	return func(actual T) error {
 		if actual < expected {
-			return errors.New(errMsgMinValueConstraint)
+			return errors.New(models.ErrMsgMinValueConstraint)
 		}
 
 		return nil
@@ -284,7 +282,7 @@ func WithMinimum[T Number](expected T) Constraint[T] {
 func WithMaximum[T Number](expected T) Constraint[T] {
 	return func(actual T) error {
 		if actual > expected {
-			return errors.New(errMsgMaxValueConstraint)
+			return errors.New(models.ErrMsgMaxValueConstraint)
 		}
 
 		return nil
@@ -319,7 +317,7 @@ func parseBoolParameter(param string, fn Operation[bool]) (bool, error) {
 func parseNumericArrayParameter[T Number](param, delim string, required bool, fn Operation[T], checks ...Constraint[T]) ([]T, error) {
 	if param == "" {
 		if required {
-			return nil, errors.New(errMsgRequiredMissing)
+			return nil, errors.New(models.ErrMsgRequiredMissing)
 		}
 
 		return nil, nil

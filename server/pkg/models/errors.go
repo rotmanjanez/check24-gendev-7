@@ -20,6 +20,10 @@ var (
 	ErrTypeAssertionError = errors.New("unable to assert type")
 )
 
+const ErrMsgRequiredMissing = "required parameter is missing"
+const ErrMsgMinValueConstraint = "provided parameter is not respecting minimum value constraint"
+const ErrMsgMaxValueConstraint = "provided parameter is not respecting maximum value constraint"
+
 // RequiredError indicates that an error has occurred when parsing request parameters
 type RequiredError struct {
 	Field string
@@ -27,4 +31,21 @@ type RequiredError struct {
 
 func (e *RequiredError) Error() string {
 	return fmt.Sprintf("required field '%s' is zero value.", e.Field)
+}
+
+type ParsingError struct {
+	Param string
+	Err   error
+}
+
+func (e *ParsingError) Unwrap() error {
+	return e.Err
+}
+
+func (e *ParsingError) Error() string {
+	if e.Param == "" {
+		return e.Err.Error()
+	}
+
+	return e.Param + ": " + e.Err.Error()
 }

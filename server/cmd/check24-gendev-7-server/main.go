@@ -27,7 +27,10 @@ func main() {
 	SystemAPIService := api.NewSystemAPIService(cfg)
 	SystemAPIController := api.NewSystemAPIController(SystemAPIService)
 
-	router := api.NewRouter(HealthAPIController, SystemAPIController)
+	InternetProductsAPIService := api.NewInternetProductsAPIService(cfg)
+	InternetProductsAPIController := api.NewInternetProductsAPIController(InternetProductsAPIService)
+
+	router := api.NewRouter(HealthAPIController, SystemAPIController, InternetProductsAPIController)
 
 	log.Fatal(http.ListenAndServe(cfg.GetAddress(), router))
 }

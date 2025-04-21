@@ -13,6 +13,8 @@ package api
 import (
 	"context"
 	"net/http"
+
+	"github.com/rotmanjanez/check24-gendev-7/pkg/models"
 )
 
 // HealthAPIRouter defines the required methods for binding the api requests to a responses for the HealthAPI
@@ -20,6 +22,16 @@ import (
 // pass the data to a HealthAPIServicer to perform the required actions, then write the service results to the http response.
 type HealthAPIRouter interface {
 	HealthCheck(http.ResponseWriter, *http.Request)
+}
+
+// InternetProductsAPIRouter defines the required methods for binding the api requests to a responses for the InternetProductsAPI
+// The InternetProductsAPIRouter implementation should parse necessary information from the http request,
+// pass the data to a InternetProductsAPIServicer to perform the required actions, then write the service results to the http response.
+type InternetProductsAPIRouter interface {
+	InitiateInternetProductsQuery(http.ResponseWriter, *http.Request)
+	ContinueInternetProductsQuery(http.ResponseWriter, *http.Request)
+	GetSharedInternetProducts(http.ResponseWriter, *http.Request)
+	ShareInternetProducts(http.ResponseWriter, *http.Request)
 }
 
 // SystemAPIRouter defines the required methods for binding the api requests to a responses for the SystemAPI
@@ -35,6 +47,17 @@ type SystemAPIRouter interface {
 // and updated with the logic required for the API.
 type HealthAPIServicer interface {
 	HealthCheck(context.Context) (ImplResponse, error)
+}
+
+// InternetProductsAPIServicer defines the api actions for the InternetProductsAPI service
+// This interface intended to stay up to date with the openapi yaml used to generate it,
+// while the service implementation can be ignored with the .openapi-generator-ignore file
+// and updated with the logic required for the API.
+type InternetProductsAPIServicer interface {
+	InitiateInternetProductsQuery(context.Context, models.Address, []string) (ImplResponse, error)
+	ContinueInternetProductsQuery(context.Context, string) (ImplResponse, error)
+	GetSharedInternetProducts(context.Context, string) (ImplResponse, error)
+	ShareInternetProducts(context.Context, string) (ImplResponse, error)
 }
 
 // SystemAPIServicer defines the api actions for the SystemAPI service
