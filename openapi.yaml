@@ -1,0 +1,38 @@
+openapi: 3.0.0
+info:
+  description: API for the 7th CHECK24 GenDev challenge providing product offerings
+    from five different internet providers
+  title: CHECK24 GenDev 7 API
+  version: dev
+servers:
+- description: Local development server
+  url: http://localhost:8080
+- description: Production server
+  url: https://check24-gendev-7-api.janez.at/api
+paths:
+  /health:
+    get:
+      description: Returns the status of the API
+      operationId: healthCheck
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: Successful health check
+      summary: Health check endpoint
+      tags:
+      - Health
+components:
+  schemas:
+    Health:
+      description: Health check response
+      example:
+        status: ok
+      properties:
+        status:
+          example: ok
+          type: string
+      type: object
+      x-go-type: Health
