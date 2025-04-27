@@ -1,0 +1,18 @@
+{
+    "version": "dev",
+    "address": "localhost",
+    "port": 8080,
+    "backends": {
+        "Example Provider": {
+            "enabled": false,
+            "retries": 3,
+            "timeout": 2500,
+            "maxConcurrent": 5,
+            "backoff ": 2000,
+            "options": {
+                "delay": 10,
+                "responses": []
+            }
+        }
+    }
+}
