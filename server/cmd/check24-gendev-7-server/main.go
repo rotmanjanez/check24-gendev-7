@@ -24,7 +24,10 @@ func main() {
 	HealthAPIService := api.NewHealthAPIService()
 	HealthAPIController := api.NewHealthAPIController(HealthAPIService)
 
-	router := api.NewRouter(HealthAPIController)
+	SystemAPIService := api.NewSystemAPIService(cfg)
+	SystemAPIController := api.NewSystemAPIController(SystemAPIService)
+
+	router := api.NewRouter(HealthAPIController, SystemAPIController)
 
 	log.Fatal(http.ListenAndServe(cfg.GetAddress(), router))
 }

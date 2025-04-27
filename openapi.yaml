@@ -24,6 +24,20 @@ paths:
       summary: Health check endpoint
       tags:
       - Health
+  /version:
+    get:
+      description: Returns version information about the API
+      operationId: getVersion
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+          description: Successful version retrieval
+      summary: Version information endpoint
+      tags:
+      - System
 components:
   schemas:
     Health:
@@ -36,3 +50,25 @@ components:
           type: string
       type: object
       x-go-type: Health
+    Version:
+      description: Version information response
+      example:
+        version: 1.0.0
+        buildDate: 2025-04-21T12:00:00Z
+        commitHash: abc123def456
+      properties:
+        version:
+          description: The semantic version of the API
+          example: 1.0.0
+          type: string
+        buildDate:
+          description: The date and time when the API was built
+          example: 2025-04-21T12:00:00Z
+          format: date-time
+          type: string
+        commitHash:
+          description: The git commit hash of the API build
+          example: abc123def456
+          type: string
+      type: object
+      x-go-type: Version

@@ -2,7 +2,9 @@ README.md
 api/openapi.yaml
 internal/api/api.go
 internal/api/api_health.go
+internal/api/api_system.go
 internal/api/impl.go
 internal/api/logger.go
 internal/api/model_health.go
+internal/api/model_version.go
 internal/api/routers.go
