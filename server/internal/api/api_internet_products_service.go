@@ -14,6 +14,7 @@ import (
 	"context"
 
 	"github.com/rotmanjanez/check24-gendev-7/config"
+	"github.com/rotmanjanez/check24-gendev-7/pkg/interfaces"
 	"github.com/rotmanjanez/check24-gendev-7/pkg/models"
 )
 
@@ -21,13 +22,15 @@ import (
 // This service should implement the business logic for every endpoint for the InternetProductsAPI API.
 // Include any external packages or services that will be required by this service.
 type InternetProductsAPIService struct {
-	config *config.Config
+	config    *config.Config
+	providers []interfaces.ProviderAdapter
 }
 
 // NewInternetProductsAPIService creates a default api service
-func NewInternetProductsAPIService(cfg *config.Config) *InternetProductsAPIService {
+func NewInternetProductsAPIService(cfg *config.Config, providers []interfaces.ProviderAdapter) *InternetProductsAPIService {
 	return &InternetProductsAPIService{
-		config: cfg,
+		config:    cfg,
+		providers: providers,
 	}
 }
 
