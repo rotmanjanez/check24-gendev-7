@@ -9,17 +9,36 @@
 package main
 
 import (
+	"flag"
 	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/rotmanjanez/check24-gendev-7/config"
 	"github.com/rotmanjanez/check24-gendev-7/internal/api"
+	"github.com/rotmanjanez/check24-gendev-7/pkg/interfaces"
+
+	_ "github.com/rotmanjanez/check24-gendev-7/providers/exampleprovider"
 )
 
 func main() {
-	log.Printf("Server started")
+	configPath := flag.String("config", "config.json", "Path to the configuration file")
 
-	cfg := config.NewConfig()
+	flag.Parse()
+
+	if configPath == nil {
+		log.Fatal("Config path is nil")
+	}
+
+	cfg, err := config.LoadConfig(*configPath)
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
+
+	providers, err := interfaces.CreateProviders(cfg)
+	if err != nil {
+		log.Fatalf("Error creating backends: %v", err)
+	}
 
 	HealthAPIService := api.NewHealthAPIService()
 	HealthAPIController := api.NewHealthAPIController(HealthAPIService)
@@ -27,10 +46,15 @@ func main() {
 	SystemAPIService := api.NewSystemAPIService(cfg)
 	SystemAPIController := api.NewSystemAPIController(SystemAPIService)
 
-	InternetProductsAPIService := api.NewInternetProductsAPIService(cfg)
+	InternetProductsAPIService := api.NewInternetProductsAPIService(cfg, providers)
 	InternetProductsAPIController := api.NewInternetProductsAPIController(InternetProductsAPIService)
 
 	router := api.NewRouter(HealthAPIController, SystemAPIController, InternetProductsAPIController)
+
+	slog.Debug("Using config file", "path", *configPath)
+	slog.Debug("Using config", "config", cfg)
+	slog.Debug("Using config backends", "backends", cfg.Backends)
+	log.Printf("Starting server on %s", cfg.GetAddress())
 
 	log.Fatal(http.ListenAndServe(cfg.GetAddress(), router))
 }

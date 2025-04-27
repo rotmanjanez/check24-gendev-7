@@ -1,7 +1,9 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -37,16 +39,40 @@ type Config struct {
 	// It is set at build time using the -X flag.
 	// default: empty
 	CommitHash string
+
+	Backends map[string]BackendConfig `json:"backends"`
 }
 
-func NewConfig() *Config {
-	return &Config{
-		Version:    "dev",
-		Address:    "localhost",
-		Port:       8080,
-		BuildDate:  buildDate,
-		CommitHash: commitHash,
+type BackendConfig struct {
+	Enabled       bool                   `json:"enabled"`
+	Retries       int                    `json:"retries"`
+	Timeout       time.Duration          `json:"timeout"`
+	MaxConcurrent int                    `json:"maxConcurrent"`
+	Backoff       time.Duration          `json:"backoff"`
+	Options       map[string]interface{} `json:"options"`
+}
+
+func LoadConfig(filename string) (*Config, error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
 	}
+
+	var config Config
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, err
+	}
+
+	for key, backend := range config.Backends {
+		backend.Timeout = backend.Timeout * time.Millisecond
+		backend.Backoff = backend.Backoff * time.Millisecond
+		config.Backends[key] = backend
+	}
+
+	config.BuildDate = buildDate
+	config.CommitHash = commitHash
+
+	return &config, nil
 }
 
 func (c *Config) GetAddress() string {
