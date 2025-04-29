@@ -14,6 +14,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/joho/godotenv"
+
 	"github.com/rotmanjanez/check24-gendev-7/config"
 	"github.com/rotmanjanez/check24-gendev-7/internal/api"
 	"github.com/rotmanjanez/check24-gendev-7/pkg/interfaces"
@@ -24,11 +26,20 @@ import (
 
 func main() {
 	configPath := flag.String("config", "config.json", "Path to the configuration file")
+	envPath := flag.String("env", ".env", "Path to the environment file")
 
 	flag.Parse()
 
 	if configPath == nil {
 		log.Fatal("Config path is nil")
+	}
+	if envPath == nil {
+		log.Fatal("Env path is nil")
+	}
+
+	err := godotenv.Load(*envPath)
+	if err != nil {
+		log.Fatalf("Error loading environment file '%s': %v", *envPath, err)
 	}
 
 	cfg, err := config.LoadConfig(*configPath)
