@@ -1,0 +1,56 @@
+openapi: "3.0.3"
+info:
+  title: "ByteMe API"
+  version: "1.0.0"
+  description: |
+    This API returns product offers in CSV format.
+servers:
+  - url: "https://byteme.gendev7.check24.fun"
+paths:
+  /app/api/products/data:
+    get:
+      summary: "Retrieve product offers"
+      description: "Retrieves product offers in CSV format."
+      parameters:
+        - name: street
+          in: query
+          required: true
+          description: "Street address for filtering offers."
+          schema:
+            type: string
+        - name: houseNumber
+          in: query
+          required: true
+          description: "House number for filtering offers."
+          schema:
+            type: string
+        - name: city
+          in: query
+          required: true
+          description: "City for filtering offers."
+          schema:
+            type: string
+        - name: plz
+          in: query
+          required: true
+          description: "Postal code for filtering offers."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "A CSV file containing product offers."
+          content:
+            text/csv:
+              schema:
+                type: string
+                example: |
+                  productId,providerName,speed,monthlyCostInCent,afterTwoYearsMonthlyCost,durationInMonths,connectionType,installationService,tv,limitFrom,maxAge,voucherType,voucherValue
+                  1,ByteMe,100,2999,1999,24,DSL,true,false,50,35,none,0
+      security:
+        - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key

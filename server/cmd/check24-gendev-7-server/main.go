@@ -18,6 +18,7 @@ import (
 	"github.com/rotmanjanez/check24-gendev-7/internal/api"
 	"github.com/rotmanjanez/check24-gendev-7/pkg/interfaces"
 
+	_ "github.com/rotmanjanez/check24-gendev-7/providers/byteme"
 	_ "github.com/rotmanjanez/check24-gendev-7/providers/exampleprovider"
 )
 
