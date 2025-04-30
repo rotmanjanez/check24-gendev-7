@@ -10,101 +10,224 @@ package api
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/rotmanjanez/check24-gendev-7/config"
+	"github.com/rotmanjanez/check24-gendev-7/internal/requestmanager"
 	i "github.com/rotmanjanez/check24-gendev-7/pkg/interfaces"
 	m "github.com/rotmanjanez/check24-gendev-7/pkg/models"
+	p "github.com/rotmanjanez/check24-gendev-7/pkg/provider"
 )
 
 // InternetProductsAPIService is a service that implements the logic for the InternetProductsAPIServicer
 // This service should implement the business logic for every endpoint for the InternetProductsAPI API.
 // Include any external packages or services that will be required by this service.
 type InternetProductsAPIService struct {
-	config    *config.Config
-	providers []i.ProviderAdapter
+	config *config.Config
+	cache  i.Cache
+	queue  i.Cache
+	rc     *requestmanager.RequestCoordinator
 }
+
+const persistIndicator string = "indicator-persist"
 
 // NewInternetProductsAPIService creates a default api service
-func NewInternetProductsAPIService(cfg *config.Config, providers []i.ProviderAdapter) *InternetProductsAPIService {
+func NewInternetProductsAPIService(cfg *config.Config, cache i.Cache, queue i.Cache, providers []*p.ProviderConfig) *InternetProductsAPIService {
 	return &InternetProductsAPIService{
-		config:    cfg,
-		providers: providers,
+		config: cfg,
+		cache:  cache,
+		queue:  queue,
+		rc:     requestmanager.NewRequestCoordinator(providers),
 	}
 }
+func canonicalizeInternetProduct(product m.InternetProduct) m.InternetProduct {
+	if product.Pricing.SubsequentCosts != nil &&
+		product.Pricing.ContractDurationInMonths != nil &&
+		product.Pricing.SubsequentCosts.StartMonth > *product.Pricing.ContractDurationInMonths {
+		product.Pricing.SubsequentCosts = nil
+	}
 
-func handleAdaperResponse(products *[]m.InternetProduct, registeredRequestsCtx *[]i.Response, initialRequest i.Request, response i.ParsedResponse, provider i.ProviderAdapter) {
-	// still continue with the returned requests and products
-	*products = append(*products, response.InternetProducts...)
+	return product
+}
 
-	for _, prepReq := range response.Requests {
-		// set the callback provider to the one that prepared the request if not already set
-		if prepReq.Callback == nil {
-			prepReq.Callback = provider
+func (s *InternetProductsAPIService) ContinueInternetProductsQuery(ctx context.Context, cursor string) (ImplResponse, error) {
+	// check if the cursor is a valid UUID
+	if _, err := uuid.Parse(cursor); err != nil {
+		return Response(http.StatusBadRequest, nil), errors.New("invalid cursor")
+	}
+
+	allProducts := m.SharedInternetProductsResponse{}
+	foundAny := false
+
+	for len(cursor) > 0 {
+		products := new(m.InternetProductsResponse)
+		exists, err := s.queue.Get(ctx, cursor, products)
+		if err != nil {
+			slog.Error("Error getting products from cache", "error", err)
+			return Response(http.StatusInternalServerError, nil), err
 		}
-
-		// add the request to the list of requests to be sent
-		*registeredRequestsCtx = append(*registeredRequestsCtx, i.Response{
-			InitialRequestData: initialRequest,
-			Request:            prepReq,
-			HTTPResponse:       nil,
-		})
+		if !exists {
+			break
+		}
+		foundAny = true
+		allProducts.Products = append(allProducts.Products, products.Products...)
+		cursor = products.NextCursor
 	}
+
+	if !foundAny {
+		return Response(http.StatusNotFound, nil), errors.New("products not found")
+	}
+
+	return Response(http.StatusOK, &m.InternetProductsResponse{
+		Products:   allProducts.Products,
+		NextCursor: cursor,
+	}), nil
 }
 
-// GetInternetProducts -
-func (s *InternetProductsAPIService) GetInternetProducts(ctx context.Context, address m.Address) (ImplResponse, error) {
+func (s *InternetProductsAPIService) processRequest(ctx context.Context, address m.Address, cursor string) {
+	prods, errs := s.rc.Run(ctx, i.Request{
+		Address: address,
+	}, 10, 10)
+
+	go func() {
+		for err := range errs {
+			slog.Error("Error fetching products", "error", err)
+		}
+	}()
 
 	var products []m.InternetProduct
+	current := cursor
+	next := uuid.New().String()
+	for prod := range prods {
+		slog.Info("Fetched product", "product", prod)
+		products = append(products, prod)
 
-	// Response also contains the initial Request data an the prepared requests returned from the provider adapter as it may be needed to parse the response
-	// So we con use it directly to store all required information, even if the naming is a bit confusing
-	var registeredRequestsCtx []i.Response
-
-	for _, provider := range s.providers {
-		reqData := i.Request{
-			Address: address,
-		}
-
-		resp, err := provider.PrepareRequest(reqData)
-
+		slog.Info("Adding product to queue", "cursor", current, "next", next)
+		err := s.queue.Set(ctx, current, &m.InternetProductsResponse{
+			Products:   []m.InternetProduct{prod},
+			NextCursor: next,
+		}, time.Duration(1*time.Hour))
 		if err != nil {
-			slog.Error("Error preparing request", "provider", provider.Name(), "error", err)
-		}
-
-		handleAdaperResponse(&products, &registeredRequestsCtx, reqData, resp, provider)
-	}
-
-	for len(registeredRequestsCtx) > 0 {
-		requestCtx := registeredRequestsCtx[0]
-		registeredRequestsCtx = registeredRequestsCtx[1:]
-
-		httpReq := requestCtx.Request.Request
-
-		client := &http.Client{}
-
-		// do the request
-		httpResp, err := client.Do(httpReq)
-
-		if err != nil {
-			slog.Error("Error doing request", "request", httpReq, "error", err)
+			slog.Error("Error setting product in cache", "error", err)
 			continue
 		}
-		defer httpResp.Body.Close()
 
-		requestCtx.HTTPResponse = httpResp
-
-		callbackProvider := requestCtx.Request.Callback
-
-		parsedResp, err := callbackProvider.ParseResponse(requestCtx)
-
-		if err != nil {
-			slog.Error("Error parsing response", "provider", callbackProvider.Name(), "error", err)
-		}
-
-		handleAdaperResponse(&products, &registeredRequestsCtx, requestCtx.InitialRequestData, parsedResp, callbackProvider)
+		current = next
+		next = uuid.New().String()
 	}
 
-	return Response(200, products), nil
+	// add a final entry to the queue with the last cursor
+	slog.Info("Adding final product to queue", "cursor", current, "next", "")
+	err := s.queue.Set(ctx, current, &m.InternetProductsResponse{
+		Products:   []m.InternetProduct{},
+		NextCursor: "",
+	}, time.Duration(1*time.Hour))
+	if err != nil {
+		slog.Error("Error setting final product in cache", "error", err)
+	}
+
+	slog.Info("Fetched products", "count", len(products))
+
+	ok, err := s.cache.SetIfNotExists(ctx, cursor, &m.SharedInternetProductsResponse{
+		Products: products,
+		Address:  address,
+		Version:  m.INTERNET_PRODUCTS_RESPONSE_VERSION,
+	}, time.Duration(5*time.Minute))
+
+	if err != nil {
+		slog.Error("Error setting products in cache", "error", err)
+	}
+
+	if !ok {
+		// products already exist in the cache, need to persist
+		existingProducts := new(m.SharedInternetProductsResponse)
+		exists, err := s.cache.Get(ctx, cursor, existingProducts)
+		if err != nil {
+			slog.Error("Error getting products from cache", "error", err)
+			return
+		}
+		if exists && existingProducts.Version != persistIndicator {
+			// unlikely chance of uuid collision, but possible
+			slog.Error("Products already exist in cache, persisting", "cursor", cursor)
+		}
+		// if it doesn't exist, it means that the persisted key expired in the meantime
+		err = s.cache.Set(ctx, cursor, &m.SharedInternetProductsResponse{
+			Products: products,
+			Address:  address,
+			Version:  m.INTERNET_PRODUCTS_RESPONSE_VERSION,
+		}, i.KeepTTL)
+
+		if err != nil {
+			slog.Error("Error setting products in cache", "error", err)
+			return
+		}
+	}
+}
+
+func (s *InternetProductsAPIService) InitiateInternetProductsQuery(ctx context.Context, address m.Address, providers []string) (ImplResponse, error) {
+	cursor := uuid.New().String()
+
+	go func() {
+		bg := context.Background()
+		bgWithTimeout, cancel := context.WithTimeout(bg, 60*time.Second)
+		defer cancel()
+
+		s.processRequest(bgWithTimeout, address, cursor)
+	}()
+
+	return Response(200, m.InternetProductsCursor{
+		Version:    m.INTERNET_PRODUCTS_RESPONSE_VERSION,
+		NextCursor: cursor,
+	}), nil
+}
+
+func (s *InternetProductsAPIService) ShareInternetProducts(ctx context.Context, cursor string) (ImplResponse, error) {
+	// check if the cursor is a valid UUID
+	if _, err := uuid.Parse(cursor); err != nil {
+		return Response(http.StatusBadRequest, nil), errors.New("invalid cursor")
+	}
+
+	value := m.SharedInternetProductsResponse{
+		Version: persistIndicator,
+	}
+	ok, err := s.cache.SetIfNotExists(ctx, cursor, value, time.Duration(24*time.Hour))
+	if err != nil {
+		slog.Error("Error setting products in cache", "error", err)
+		return Response(http.StatusInternalServerError, nil), err
+	}
+
+	if !ok {
+		// products already exist in the cache, need to persist
+		err := s.cache.Persist(ctx, cursor)
+		if err != nil {
+			slog.Error("Error persisting products in cache", "error", err)
+			return Response(http.StatusInternalServerError, nil), err
+		}
+	}
+
+	return Response(http.StatusOK, nil), nil
+}
+
+// GetSharedInternetProducts -
+func (s *InternetProductsAPIService) GetSharedInternetProducts(ctx context.Context, cursor string) (ImplResponse, error) {
+	if _, err := uuid.Parse(cursor); err != nil {
+		return Response(http.StatusBadRequest, nil), errors.New("invalid cursor")
+	}
+	products := new(m.SharedInternetProductsResponse)
+	exists, err := s.cache.Get(ctx, cursor, products)
+	if err != nil {
+		slog.Error("Error getting products from cache", "error", err)
+		return Response(http.StatusInternalServerError, nil), err
+	}
+
+	if !exists || products.Version == persistIndicator {
+		return Response(http.StatusNotFound, nil), errors.New("products not found")
+	}
+
+	return Response(http.StatusOK, products), nil
 }

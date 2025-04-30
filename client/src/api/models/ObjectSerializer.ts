@@ -1,6 +1,8 @@
 export * from '../models/Health';
+export * from '../models/Version';
 
 import { Health } from '../models/Health';
+import { Version } from '../models/Version';
 
 /* tslint:disable:no-unused-variable */
 let primitives = [
@@ -19,6 +21,7 @@ let enumsMap: Set<string> = new Set<string>([
 
 let typeMap: {[index: string]: any} = {
     "Health": Health,
+    "Version": Version,
 }
 
 type MimeTypeDescriptor = {

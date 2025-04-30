@@ -1,7 +1,9 @@
 .gitattributes
 HealthApi.md
 README.md
+SystemApi.md
 apis/HealthApi.ts
+apis/SystemApi.ts
 apis/baseapi.ts
 apis/exception.ts
 auth/auth.ts
@@ -12,6 +14,7 @@ index.ts
 middleware.ts
 models/Health.ts
 models/ObjectSerializer.ts
+models/Version.ts
 models/all.ts
 rxjsStub.ts
 servers.ts

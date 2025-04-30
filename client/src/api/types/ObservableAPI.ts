@@ -4,6 +4,7 @@ import type { Middleware } from '../middleware';
 import { Observable, of, from } from '../rxjsStub';
 import {mergeMap, map} from  '../rxjsStub';
 import { Health } from '../models/Health';
+import { Version } from '../models/Version';
 
 import { HealthApiRequestFactory, HealthApiResponseProcessor} from "../apis/HealthApi";
 export class ObservableHealthApi {
@@ -79,6 +80,84 @@ export class ObservableHealthApi {
      */
     public healthCheck(_options?: ConfigurationOptions): Observable<Health> {
         return this.healthCheckWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Health>) => apiResponse.data));
+    }
+
+}
+
+import { SystemApiRequestFactory, SystemApiResponseProcessor} from "../apis/SystemApi";
+export class ObservableSystemApi {
+    private requestFactory: SystemApiRequestFactory;
+    private responseProcessor: SystemApiResponseProcessor;
+    private configuration: Configuration;
+
+    public constructor(
+        configuration: Configuration,
+        requestFactory?: SystemApiRequestFactory,
+        responseProcessor?: SystemApiResponseProcessor
+    ) {
+        this.configuration = configuration;
+        this.requestFactory = requestFactory || new SystemApiRequestFactory(configuration);
+        this.responseProcessor = responseProcessor || new SystemApiResponseProcessor();
+    }
+
+    /**
+     * Returns version information about the API
+     * Version information endpoint
+     */
+    public getVersionWithHttpInfo(_options?: ConfigurationOptions): Observable<HttpInfo<Version>> {
+    let _config = this.configuration;
+    let allMiddleware: Middleware[] = [];
+    if (_options && _options.middleware){
+      const middlewareMergeStrategy = _options.middlewareMergeStrategy || 'replace' // default to replace behavior
+      // call-time middleware provided
+      const calltimeMiddleware: Middleware[] = _options.middleware;
+
+      switch(middlewareMergeStrategy){
+      case 'append':
+        allMiddleware = this.configuration.middleware.concat(calltimeMiddleware);
+        break;
+      case 'prepend':
+        allMiddleware = calltimeMiddleware.concat(this.configuration.middleware)
+        break;
+      case 'replace':
+        allMiddleware = calltimeMiddleware
+        break;
+      default: 
+        throw new Error(`unrecognized middleware merge strategy '${middlewareMergeStrategy}'`)
+      }
+	}
+	if (_options){
+    _config = {
+      baseServer: _options.baseServer || this.configuration.baseServer,
+      httpApi: _options.httpApi || this.configuration.httpApi,
+      authMethods: _options.authMethods || this.configuration.authMethods,
+      middleware: allMiddleware || this.configuration.middleware
+		};
+	}
+
+        const requestContextPromise = this.requestFactory.getVersion(_config);
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (const middleware of allMiddleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (const middleware of allMiddleware.reverse()) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getVersionWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Returns version information about the API
+     * Version information endpoint
+     */
+    public getVersion(_options?: ConfigurationOptions): Observable<Version> {
+        return this.getVersionWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Version>) => apiResponse.data));
     }
 
 }
