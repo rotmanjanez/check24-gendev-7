@@ -22,6 +22,7 @@ import (
 
 	_ "github.com/rotmanjanez/check24-gendev-7/providers/byteme"
 	_ "github.com/rotmanjanez/check24-gendev-7/providers/exampleprovider"
+	_ "github.com/rotmanjanez/check24-gendev-7/providers/pingperfect"
 )
 
 func main() {

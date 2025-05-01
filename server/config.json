@@ -23,6 +23,16 @@
             "options": {
                 "url": "https://byteme.gendev7.check24.fun/app/api/products/data"
             }
+        },
+        "PingPerfect": {
+            "enabled": true,
+            "retries": 3,
+            "timeout": 1500,
+            "maxConcurrent": 1,
+            "backoff ": 2000,
+            "options": {
+                "url": "https://pingperfect.gendev7.check24.fun/internet/angebote/data"
+            }
         }
     }
 }
