@@ -27,6 +27,7 @@ import (
 func main() {
 	configPath := flag.String("config", "config.json", "Path to the configuration file")
 	envPath := flag.String("env", ".env", "Path to the environment file")
+	debug := flag.Bool("debug", false, "Enable debug logging")
 
 	flag.Parse()
 
@@ -35,6 +36,19 @@ func main() {
 	}
 	if envPath == nil {
 		log.Fatal("Env path is nil")
+	}
+	if debug == nil {
+		log.Fatal("Debug flag is nil")
+	}
+
+	if *debug {
+		slog.SetDefault(slog.New(slog.NewTextHandler(log.Writer(), &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		})))
+	} else {
+		slog.SetDefault(slog.New(slog.NewTextHandler(log.Writer(), &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		})))
 	}
 
 	err := godotenv.Load(*envPath)
