@@ -33,6 +33,17 @@
             "options": {
                 "url": "https://pingperfect.gendev7.check24.fun/internet/angebote/data"
             }
+        },
+        "ServusSpeed": {
+            "enabled": true,
+            "retries": 3,
+            "timeout": 25000,
+            "maxConcurrent": 3,
+            "backoff ": 2000,
+            "options": {
+                "cacheDuration": 10,
+                "url": "https://servus-speed.gendev7.check24.fun"
+            }
         }
     }
 }

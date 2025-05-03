@@ -23,6 +23,7 @@ import (
 	_ "github.com/rotmanjanez/check24-gendev-7/providers/byteme"
 	_ "github.com/rotmanjanez/check24-gendev-7/providers/exampleprovider"
 	_ "github.com/rotmanjanez/check24-gendev-7/providers/pingperfect"
+	_ "github.com/rotmanjanez/check24-gendev-7/providers/servusspeed"
 )
 
 func main() {
