@@ -55,6 +55,19 @@
                 "blockSize": 5,
                 "url": "https://verbyndich.gendev7.check24.fun"
             }
+        },
+        "WebWunder": {
+            "enabled": true,
+            "retries": 3,
+            "timeout": 25000,
+            "maxConcurrent": 6,
+            "backoff ": 2000,
+            "options": {
+                "soapEndpoint": "https://webwunder.gendev7.check24.fun:443/endpunkte/soap/ws",
+                "soapAction": "http://spring.io/guides/gs-producing-web-service/legacyGetInternetOffers",
+                "soapGs": "http://webwunder.gendev7.check24.fun/offerservice",
+                "soapEnv": "http://schemas.xmlsoap.org/soap/envelope/"
+            }
         }
     }
 }
