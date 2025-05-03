@@ -1,0 +1,60 @@
+openapi: 3.0.0
+info:
+  title: VerbynDich API
+  version: "1.0.0"
+  description: API for retrieving offers based on address input.
+servers:
+  - url: https://verbyndich.gendev7.check24.fun
+paths:
+  /check24/data:
+    post:
+      summary: Retrieve offer details for a given address
+      description: >
+        The request body must be a plain text string containing the address in the format:
+        `street;house number;city;plz` with no newlines or whitespace.
+      parameters:
+        - in: query
+          name: apiKey
+          description: API key for authentication.
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          description: Optional page number (integer starting from 0).
+          required: false
+          schema:
+            type: integer
+            default: 0
+      requestBody:
+        description: A plain text string containing the address formatted as `street;house number;city;plz`.
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Successful response with offer details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product:
+                    type: string
+                    description: Name of the product.
+                  description:
+                    type: string
+                    description: Detailed description of the offer.
+                  last:
+                    type: boolean
+                    description: Indicates whether this is the last offer.
+                  valid:
+                    type: boolean
+                    description: Indicates whether the offer is valid.
+                required:
+                  - product
+                  - description
+                  - last
+                  - valid

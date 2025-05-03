@@ -44,6 +44,17 @@
                 "cacheDuration": 10,
                 "url": "https://servus-speed.gendev7.check24.fun"
             }
+        },
+        "VerbynDich": {
+            "enabled": true,
+            "retries": 3,
+            "timeout": 2500,
+            "maxConcurrent": 5,
+            "backoff ": 2000,
+            "options": {
+                "blockSize": 5,
+                "url": "https://verbyndich.gendev7.check24.fun"
+            }
         }
     }
 }

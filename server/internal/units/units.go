@@ -1,8 +1,7 @@
 package units
 
 const (
-	Kb int64 = 1024
-	Mb       = 1024 * Kb
+	Mb int64 = 1
 	Gb       = 1024 * Mb
 )
 
