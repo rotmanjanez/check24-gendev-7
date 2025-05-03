@@ -10,11 +10,17 @@
  * Do not edit the class manually.
  */
 
+import { InternetProduct } from '../models/InternetProduct';
+
 /**
-* Health check response
+* Response containing a list of internet products
 */
-export class Health {
-    'status'?: string;
+export class InternetProductsResponse {
+    'products'?: Array<InternetProduct>;
+    /**
+    * Cursor to retrieve the next batch of products, or null if finished
+    */
+    'nextCursor'?: string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -22,14 +28,20 @@ export class Health {
 
     static readonly attributeTypeMap: Array<{ name: string, baseName: string, type: string, format: string }> = [
         {
-            "name": "status",
-            "baseName": "status",
+            "name": "products",
+            "baseName": "products",
+            "type": "Array<InternetProduct>",
+            "format": ""
+        },
+        {
+            "name": "nextCursor",
+            "baseName": "nextCursor",
             "type": "string",
             "format": ""
         }];
 
     static getAttributeTypeMap() {
-        return Health.attributeTypeMap;
+        return InternetProductsResponse.attributeTypeMap;
     }
 
     public constructor() {

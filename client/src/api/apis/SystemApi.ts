@@ -1,11 +1,11 @@
 // TODO: better import syntax?
-import {BaseAPIRequestFactory} from './baseapi';
-import type {Configuration} from '../configuration';
-import {RequestContext, HttpMethod, ResponseContext, HttpInfo} from '../http/http';
-import {ObjectSerializer} from '../models/ObjectSerializer';
-import {ApiException} from './exception';
-import {isCodeInRange} from '../util';
-import type {SecurityAuthentication} from '../auth/auth';
+import { BaseAPIRequestFactory } from './baseapi';
+import type { Configuration } from '../configuration';
+import { RequestContext, HttpMethod, ResponseContext, HttpInfo } from '../http/http';
+import { ObjectSerializer } from '../models/ObjectSerializer';
+import { ApiException } from './exception';
+import { isCodeInRange } from '../util';
+import type { SecurityAuthentication } from '../auth/auth';
 
 
 import { Version } from '../models/Version';
@@ -30,7 +30,7 @@ export class SystemApiRequestFactory extends BaseAPIRequestFactory {
         requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
 
 
-        
+
         const defaultAuth: SecurityAuthentication | undefined = _config?.authMethods?.default
         if (defaultAuth?.applySecurityAuthentication) {
             await defaultAuth?.applySecurityAuthentication(requestContext);
@@ -50,7 +50,7 @@ export class SystemApiResponseProcessor {
      * @params response Response returned by the server for a request to getVersion
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getVersionWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Version >> {
+    public async getVersionWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Version>> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: Version = ObjectSerializer.deserialize(

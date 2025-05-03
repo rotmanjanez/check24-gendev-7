@@ -10,11 +10,9 @@
  * Do not edit the class manually.
  */
 
-/**
-* Health check response
-*/
-export class Health {
-    'status'?: string;
+export class SubsequentCost {
+    'monthlyCostInCent': number;
+    'startMonth': number;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -22,14 +20,20 @@ export class Health {
 
     static readonly attributeTypeMap: Array<{ name: string, baseName: string, type: string, format: string }> = [
         {
-            "name": "status",
-            "baseName": "status",
-            "type": "string",
+            "name": "monthlyCostInCent",
+            "baseName": "monthlyCostInCent",
+            "type": "number",
+            "format": ""
+        },
+        {
+            "name": "startMonth",
+            "baseName": "startMonth",
+            "type": "number",
             "format": ""
         }];
 
     static getAttributeTypeMap() {
-        return Health.attributeTypeMap;
+        return SubsequentCost.attributeTypeMap;
     }
 
     public constructor() {

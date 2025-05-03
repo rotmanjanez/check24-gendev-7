@@ -1,26 +1,60 @@
+export * from '../models/AbsoluteDiscount';
+export * from '../models/Address';
+export * from '../models/ConnectionType';
+export * from '../models/CountryCode';
 export * from '../models/Health';
+export * from '../models/InternetProduct';
+export * from '../models/InternetProductsCursor';
+export * from '../models/InternetProductsResponse';
+export * from '../models/PercentageDiscount';
+export * from '../models/Pricing';
+export * from '../models/ProductInfo';
+export * from '../models/SharedInternetProductsResponse';
+export * from '../models/SubsequentCost';
 export * from '../models/Version';
 
+import { AbsoluteDiscount } from '../models/AbsoluteDiscount';
+import { Address } from '../models/Address';
 import { Health } from '../models/Health';
+import { InternetProduct } from '../models/InternetProduct';
+import { InternetProductsCursor } from '../models/InternetProductsCursor';
+import { InternetProductsResponse } from '../models/InternetProductsResponse';
+import { PercentageDiscount } from '../models/PercentageDiscount';
+import { Pricing } from '../models/Pricing';
+import { ProductInfo } from '../models/ProductInfo';
+import { SharedInternetProductsResponse } from '../models/SharedInternetProductsResponse';
+import { SubsequentCost } from '../models/SubsequentCost';
 import { Version } from '../models/Version';
 
 /* tslint:disable:no-unused-variable */
 let primitives = [
-                    "string",
-                    "boolean",
-                    "double",
-                    "integer",
-                    "long",
-                    "float",
-                    "number",
-                    "any"
-                 ];
+    "string",
+    "boolean",
+    "double",
+    "integer",
+    "long",
+    "float",
+    "number",
+    "any"
+];
 
 let enumsMap: Set<string> = new Set<string>([
+    "ConnectionType",
+    "CountryCode",
 ]);
 
-let typeMap: {[index: string]: any} = {
+let typeMap: { [index: string]: any } = {
+    "AbsoluteDiscount": AbsoluteDiscount,
+    "Address": Address,
     "Health": Health,
+    "InternetProduct": InternetProduct,
+    "InternetProductsCursor": InternetProductsCursor,
+    "InternetProductsResponse": InternetProductsResponse,
+    "PercentageDiscount": PercentageDiscount,
+    "Pricing": Pricing,
+    "ProductInfo": ProductInfo,
+    "SharedInternetProductsResponse": SharedInternetProductsResponse,
+    "SubsequentCost": SubsequentCost,
     "Version": Version,
 }
 
@@ -110,7 +144,7 @@ export class ObjectSerializer {
                     let mapping = typeMap[expectedType].mapping;
                     if (mapping != undefined && mapping[discriminatorType]) {
                         return mapping[discriminatorType]; // use the type given in the discriminator
-                    } else if(typeMap[discriminatorType]) {
+                    } else if (typeMap[discriminatorType]) {
                         return discriminatorType;
                     } else {
                         return expectedType; // discriminator did not map to a type
@@ -153,7 +187,7 @@ export class ObjectSerializer {
             return transformedData;
         } else if (type === "Date") {
             if (format == "date") {
-                let month = data.getMonth()+1
+                let month = data.getMonth() + 1
                 month = month < 10 ? "0" + month.toString() : month.toString()
                 let day = data.getDate();
                 day = day < 10 ? "0" + day.toString() : day.toString();
@@ -175,7 +209,7 @@ export class ObjectSerializer {
 
             // get the map for the correct type.
             let attributeTypes = typeMap[type].getAttributeTypeMap();
-            let instance: {[index: string]: any} = {};
+            let instance: { [index: string]: any } = {};
             for (let attributeType of attributeTypes) {
                 instance[attributeType.baseName] = ObjectSerializer.serialize(data[attributeType.name], attributeType.type, attributeType.format);
             }

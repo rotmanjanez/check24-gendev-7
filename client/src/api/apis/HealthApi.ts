@@ -1,11 +1,11 @@
 // TODO: better import syntax?
-import {BaseAPIRequestFactory } from './baseapi';
-import type {Configuration} from '../configuration';
-import {RequestContext, HttpMethod, ResponseContext, HttpInfo} from '../http/http';
-import {ObjectSerializer} from '../models/ObjectSerializer';
-import {ApiException} from './exception';
-import {isCodeInRange} from '../util';
-import type {SecurityAuthentication} from '../auth/auth';
+import { BaseAPIRequestFactory } from './baseapi';
+import type { Configuration } from '../configuration';
+import { RequestContext, HttpMethod, ResponseContext, HttpInfo } from '../http/http';
+import { ObjectSerializer } from '../models/ObjectSerializer';
+import { ApiException } from './exception';
+import { isCodeInRange } from '../util';
+import type { SecurityAuthentication } from '../auth/auth';
 
 
 import { Health } from '../models/Health';
@@ -30,7 +30,7 @@ export class HealthApiRequestFactory extends BaseAPIRequestFactory {
         requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
 
 
-        
+
         const defaultAuth: SecurityAuthentication | undefined = _config?.authMethods?.default
         if (defaultAuth?.applySecurityAuthentication) {
             await defaultAuth?.applySecurityAuthentication(requestContext);
@@ -50,7 +50,7 @@ export class HealthApiResponseProcessor {
      * @params response Response returned by the server for a request to healthCheck
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async healthCheckWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Health >> {
+    public async healthCheckWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Health>> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: Health = ObjectSerializer.deserialize(
@@ -58,6 +58,9 @@ export class HealthApiResponseProcessor {
                 "Health", ""
             ) as Health;
             return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+        if (isCodeInRange("500", response.httpStatusCode)) {
+            throw new ApiException<undefined>(response.httpStatusCode, "Internal server error", undefined, response.headers);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml

@@ -7,3 +7,4 @@
 package.json
 git_push.sh
 .gitignore
+tsconfig.json

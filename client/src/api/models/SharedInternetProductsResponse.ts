@@ -10,11 +10,16 @@
  * Do not edit the class manually.
  */
 
+import { Address } from '../models/Address';
+import { InternetProduct } from '../models/InternetProduct';
+
 /**
-* Health check response
+* Response containing a list of shared internet products
 */
-export class Health {
-    'status'?: string;
+export class SharedInternetProductsResponse {
+    'products'?: Array<InternetProduct>;
+    'version'?: string;
+    'address'?: Address;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -22,14 +27,26 @@ export class Health {
 
     static readonly attributeTypeMap: Array<{ name: string, baseName: string, type: string, format: string }> = [
         {
-            "name": "status",
-            "baseName": "status",
+            "name": "products",
+            "baseName": "products",
+            "type": "Array<InternetProduct>",
+            "format": ""
+        },
+        {
+            "name": "version",
+            "baseName": "version",
             "type": "string",
+            "format": ""
+        },
+        {
+            "name": "address",
+            "baseName": "Address",
+            "type": "Address",
             "format": ""
         }];
 
     static getAttributeTypeMap() {
-        return Health.attributeTypeMap;
+        return SharedInternetProductsResponse.attributeTypeMap;
     }
 
     public constructor() {

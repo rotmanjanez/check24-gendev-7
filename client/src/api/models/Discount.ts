@@ -10,28 +10,32 @@
  * Do not edit the class manually.
  */
 
-/**
-* Health check response
-*/
-export class Health {
-    'status'?: string;
+export class Discount {
+    /**
+    * Determines which subtype to use
+    */
+    'type': string;
 
-    static readonly discriminator: string | undefined = undefined;
+    static readonly discriminator: string | undefined = "type";
 
-    static readonly mapping: { [index: string]: string } | undefined = undefined;
+    static readonly mapping: { [index: string]: string } | undefined = {
+        "absolute": "AbsoluteDiscount",
+        "percentage": "PercentageDiscount",
+    };
 
     static readonly attributeTypeMap: Array<{ name: string, baseName: string, type: string, format: string }> = [
         {
-            "name": "status",
-            "baseName": "status",
+            "name": "type",
+            "baseName": "type",
             "type": "string",
             "format": ""
         }];
 
     static getAttributeTypeMap() {
-        return Health.attributeTypeMap;
+        return Discount.attributeTypeMap;
     }
 
     public constructor() {
+        this.type = "Discount";
     }
 }

@@ -11,10 +11,14 @@
  */
 
 /**
-* Health check response
+* Response containing a list of internet products and version info
 */
-export class Health {
-    'status'?: string;
+export class InternetProductsCursor {
+    'version'?: string;
+    /**
+    * Cursor to retrieve the first batch of products
+    */
+    'nextCursor'?: string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -22,14 +26,20 @@ export class Health {
 
     static readonly attributeTypeMap: Array<{ name: string, baseName: string, type: string, format: string }> = [
         {
-            "name": "status",
-            "baseName": "status",
+            "name": "version",
+            "baseName": "version",
+            "type": "string",
+            "format": ""
+        },
+        {
+            "name": "nextCursor",
+            "baseName": "nextCursor",
             "type": "string",
             "format": ""
         }];
 
     static getAttributeTypeMap() {
-        return Health.attributeTypeMap;
+        return InternetProductsCursor.attributeTypeMap;
     }
 
     public constructor() {
