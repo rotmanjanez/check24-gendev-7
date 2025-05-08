@@ -11,6 +11,14 @@ export default {
             system: "System"
         }
     },
+    product: {
+        shareFailed: "Could not share",
+        tryCopyManually: "Try copying the link manually.",
+        copyFailed: "Failed to copy link",
+        clipboardDenied: "Clipboard access denied.",
+        shareNotSupported: "Share not supported",
+        useCopyLinkInstead: "Use copy link instead.",
+    },
     addressForm: {
         countries: {
             DE: { name: "Germany" },

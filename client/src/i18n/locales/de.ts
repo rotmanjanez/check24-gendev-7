@@ -11,6 +11,14 @@ export default {
             system: "System"
         }
     },
+    product: {
+        shareFailed: "Teilen nicht möglich",
+        tryCopyManually: "Bitte Link manuell kopieren.",
+        copyFailed: "Link konnte nicht kopiert werden",
+        clipboardDenied: "Zugriff auf Zwischenablage verweigert.",
+        shareNotSupported: "Teilen nicht unterstützt",
+        useCopyLinkInstead: "Bitte Link kopieren.",
+    },
     addressForm: {
         countries: {
             DE: { name: "Deutschland" },
