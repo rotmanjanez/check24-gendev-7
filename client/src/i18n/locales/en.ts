@@ -37,6 +37,7 @@ export default {
             notIncluded: "not included",
         },
         tv: "TV Package",
+        noResults: "No offers found",
         shareFailed: "Could not share",
         tryCopyManually: "Try copying the link manually.",
         copyFailed: "Failed to copy link",
@@ -114,5 +115,14 @@ export default {
     },
     errors: {
         unknown: "An unknown error occurred.",
+        network: "Network error occurred.",
+    },
+    notifications: {
+        newOffers: "New offers available",
+    },
+    actions: {
+        refresh: "Refresh",
+        retry: "Retry",
+        compare: "Compare Now",
     },
 } as const

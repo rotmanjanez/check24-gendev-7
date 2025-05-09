@@ -37,6 +37,7 @@ export default {
             notIncluded: "nicht inklusive",
         },
         tv: "TV-Paket",
+        noResults: "Keine Angebote gefunden",
         shareFailed: "Teilen nicht möglich",
         tryCopyManually: "Bitte Link manuell kopieren.",
         copyFailed: "Link konnte nicht kopiert werden",
@@ -110,9 +111,17 @@ export default {
                 invalid_type: "Der Ländercode ist ungültig",
             }
         },
-        submit: "Jetzt vergleichen",
     },
+      notifications: {
+        newOffers: "Neue Angebote verfügbar",
+    },
+    actions: {
+        refresh: "Aktualisieren",
+        retry: "Erneut versuchen",
+        compare: "Jetzt vergleichen",
+    },  
     errors: {
         unknown: "Ein unbekannter Fehler ist aufgetreten.",
+        network: "Ein Netzwerkfehler ist aufgetreten :(",
     },
 } as const
