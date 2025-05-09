@@ -3,6 +3,10 @@ export default {
         languageCode: "DE",
         languageName: "Deutsch",
     },
+    app: {
+        title: "GenDev",
+        subtitle: "CHECK Dir Deinen Neuen Internet-Provider",
+    },
     settings: {
         toggleTheme: "Stil wechseln",
         themes: {

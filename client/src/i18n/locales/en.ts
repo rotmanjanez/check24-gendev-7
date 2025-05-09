@@ -3,6 +3,10 @@ export default {
         languageCode: "EN",
         languageName: "English",
     },
+    app: {
+        title: "GenDev",
+        subtitle: "CHECK Out Your Next Internet Provider",
+    },
     settings: {
         toggleTheme: "Toggle Theme",
         themes: {
