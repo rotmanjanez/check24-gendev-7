@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  gendev-redis:
+    image: redis:7-alpine
+    container_name: redis-dev
+    ports:
+      - "6379:6379"
+    command: ["redis-server"]
+    volumes:
+      - redis-data:/data      
+
+  gendev-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: go-server-dev
+    volumes:
+      - ./server:/app
+      - /app/tmp
+    ports:
+      - "8080:8080"
+    depends_on:
+      - gendev-redis
+    environment:
+      REDIS_ADDR: redis:6379
+
+  gendev-client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: vue-client-dev
+    environment:
+      - VITE_BACKEND_HOST=gendev-server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+
+volumes:
+  redis-data:
