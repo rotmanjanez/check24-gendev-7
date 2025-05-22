@@ -25,5 +25,19 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ''), // Remove '/api' prefix
       },
     },
-  }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('src/api')) {
+            return 'openapi-client';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        },
+      },
+    },
+  },
 })
