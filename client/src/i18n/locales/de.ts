@@ -84,16 +84,16 @@ export default {
         postalCode: {
             title: "Postleitzahl",
             placeholder: "Postleitzahl",
-            description: "Die Postleitzahl Deiner Region",
+            description: "Die Postleitzahl Deiner Stadt",
             errors: {
                 too_small: "Die Postleitzahl muss mindestens {minimum} Zeichen haben",
                 too_big: "Die Postleitzahl darf maximal {maximum} Zeichen haben",
                 invalid_type: "Die Postleitzahl enthält ungültige Zeichen",
             }
         },
-        region: {
-            title: "Region",
-            placeholder: "Region",
+        city: {
+            title: "Stadt/Region",
+            placeholder: "Stadt oder Region",
             description: "Die Stadt oder Region, in der Du lebst",
             errors: {
                 too_small: "Die Stadt muss mindestens {minimum} Zeichen haben",
@@ -127,5 +127,33 @@ export default {
     errors: {
         unknown: "Ein unbekannter Fehler ist aufgetreten.",
         network: "Ein Netzwerkfehler ist aufgetreten :(",
+    },
+    productFilter: {
+        title: "Angebote filtern",
+        description: "Angebote sortieren und filtern",
+        sortBy: "Sortieren nach",
+        selectField: "Feld auswählen",
+        price: "Preis",
+        speed: "Geschwindigkeit",
+        ascending: "Aufsteigend",
+        descending: "Absteigend",
+        reset: "Zurücksetzen",
+        filters: "Filter",
+        age: "Alter",
+        ageLabel: "Ihr Alter (für Jugendangebote)",
+        agePlaceholder: "Alter eingeben",
+        providers: "Anbieter",
+        allProviders: "Alle Anbieter",
+        selectProviders: "Anbieter auswählen",
+        priceRange: "Preisbereich",
+        speedRange: "Geschwindigkeitsbereich",
+        maxPrice: "Max €{max}/Monat",
+        minSpeed: "Min {min} Mbps",
+        showFilters: "Filter anzeigen",
+        hideFilters: "Filter ausblenden",
+        clearFilters: "Alle Filter löschen",
+        applyFilters: "Filter anwenden",
+        includeTV: "TV-Pakete einschließen",
+        tvLabel: "TV enthalten",
     },
 } as const
