@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // override local variables with build flags
@@ -39,6 +41,8 @@ type Config struct {
 	// It is set at build time using the -X flag.
 	// default: empty
 	CommitHash string
+
+	Redis *redis.Options `json:"redis"`
 
 	Backends map[string]BackendConfig `json:"backends"`
 }
