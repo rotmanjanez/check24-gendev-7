@@ -3,7 +3,6 @@ import tailwindcss from '@tailwindcss/vite'
 import vueI18n from '@intlify/unplugin-vue-i18n/vite'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { configDefaults } from 'vitest/config'
 
 export default defineConfig({
   plugins: [vue(), tailwindcss(), vueI18n({
@@ -20,7 +19,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8080', // Backend server
+        target: `http://${process.env.VITE_BACKEND_HOST || 'localhost'}:8080`, // Backend server
         changeOrigin: true, 
         rewrite: (path) => path.replace(/^\/api/, ''), // Remove '/api' prefix
       },
@@ -33,21 +32,29 @@ export default defineConfig({
           if (id.includes('src/api')) {
             return 'openapi-client';
           }
+          if (id.includes('node_modules/vue')) {
+            return 'vue';
+          }
+          if (id.includes('node_modules/vue-router')) {
+            return 'vue-router';
+          }
+          if (id.includes('node_modules/@intlify')) {
+            return 'vue-i18n';
+          }
+          if (id.includes('node_modules/@tailwindcss')) {
+            return 'tailwindcss';
+          }
+          if (id.includes('node_modules/posthog-js')) {
+            return 'vendor-posthog';
+          }
+          if (id.includes('node_modules/reka-ui')) {
+            return 'vendor-reka-ui';
+          }
           if (id.includes('node_modules')) {
             return 'vendor';
           }
         },
       },
     },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html', 'json-summary'],
-      reportsDirectory: './coverage',
-    },
-    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })
