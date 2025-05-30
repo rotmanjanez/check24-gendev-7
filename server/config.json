@@ -2,7 +2,7 @@
     "version": "dev",
     "address": "localhost",
     "port": 8080,
-    "useInProcessCache": true,
+    "useInProcessCache": false,
     "redis": {
         "Addr": "gendev-redis:6379",
         "ClientName": "check24-gendev-7"
@@ -20,7 +20,7 @@
             }
         },
         "ByteMe": {
-            "enabled": true,
+            "enabled": false,
             "retries": 3,
             "timeout": 2500,
             "maxConcurrent": 1,
@@ -31,16 +31,16 @@
         },
         "PingPerfect": {
             "enabled": true,
-            "retries": 3,
-            "timeout": 1500,
+            "retries": 5,
+            "timeout": 2500,
             "maxConcurrent": 1,
-            "backoff ": 2000,
+            "backoff ": 5000,
             "options": {
                 "url": "https://pingperfect.gendev7.check24.fun/internet/angebote/data"
             }
         },
         "ServusSpeed": {
-            "enabled": true,
+            "enabled": false,
             "retries": 3,
             "timeout": 25000,
             "maxConcurrent": 3,
@@ -51,7 +51,7 @@
             }
         },
         "VerbynDich": {
-            "enabled": true,
+            "enabled": false,
             "retries": 3,
             "timeout": 2500,
             "maxConcurrent": 5,
@@ -62,7 +62,7 @@
             }
         },
         "WebWunder": {
-            "enabled": true,
+            "enabled": false,
             "retries": 3,
             "timeout": 25000,
             "maxConcurrent": 6,
