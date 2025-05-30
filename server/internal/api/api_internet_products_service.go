@@ -35,6 +35,7 @@ type InternetProductsAPIService struct {
 }
 
 const persistIndicator string = "indicator-persist"
+const workInProgressIndicator string = "indicator-work-in-progress"
 
 // NewInternetProductsAPIService creates a default api service
 func NewInternetProductsAPIService(cfg *config.Config, cache i.Cache, queue i.Cache, providers []*p.ProviderConfig) *InternetProductsAPIService {
@@ -44,15 +45,6 @@ func NewInternetProductsAPIService(cfg *config.Config, cache i.Cache, queue i.Ca
 		queue:  queue,
 		rc:     requestmanager.NewRequestCoordinator(providers),
 	}
-}
-func canonicalizeInternetProduct(product m.InternetProduct) m.InternetProduct {
-	if product.Pricing.SubsequentCosts != nil &&
-		product.Pricing.ContractDurationInMonths != nil &&
-		product.Pricing.SubsequentCosts.StartMonth > *product.Pricing.ContractDurationInMonths {
-		product.Pricing.SubsequentCosts = nil
-	}
-
-	return product
 }
 
 func (s *InternetProductsAPIService) ContinueInternetProductsQuery(ctx context.Context, cursor string) (ImplResponse, error) {
@@ -74,6 +66,14 @@ func (s *InternetProductsAPIService) ContinueInternetProductsQuery(ctx context.C
 		if !exists {
 			break
 		}
+
+		if products.NextCursor == workInProgressIndicator {
+			if !foundAny {
+				return Response(http.StatusAccepted, nil, map[string]string{"Retry-After": "3"}), nil // 3 seconds suggested
+			}
+			break
+		}
+
 		foundAny = true
 		allProducts.Products = append(allProducts.Products, products.Products...)
 		cursor = products.NextCursor
@@ -103,11 +103,12 @@ func (s *InternetProductsAPIService) processRequest(ctx context.Context, address
 	var products []m.InternetProduct
 	current := cursor
 	next := uuid.New().String()
+
 	for prod := range prods {
-		slog.Info("Fetched product", "product", prod)
+		slog.Debug("Fetched product", "product", prod.Name, "cursor", current, "next", next)
 		products = append(products, prod)
 
-		slog.Info("Adding product to queue", "cursor", current, "next", next)
+		slog.Debug("Adding product to queue", "cursor", current, "next", next)
 		err := s.queue.Set(ctx, current, &m.InternetProductsResponse{
 			Products:   []m.InternetProduct{prod},
 			NextCursor: next,
@@ -117,12 +118,18 @@ func (s *InternetProductsAPIService) processRequest(ctx context.Context, address
 			continue
 		}
 
+		// set next cursor in the queue to indicate work in progress for /internet-products/continue/{cursor}
+		err = s.queue.Set(ctx, next, &m.InternetProductsResponse{NextCursor: workInProgressIndicator}, time.Duration(15*time.Minute))
+		if err != nil {
+			slog.Error("Error setting next cursor in cache", "error", err)
+		}
+
 		current = next
 		next = uuid.New().String()
 	}
 
 	// add a final entry to the queue with the last cursor
-	slog.Info("Adding final product to queue", "cursor", current, "next", "")
+	slog.Debug("Adding final product to queue", "cursor", current, "next", "")
 	err := s.queue.Set(ctx, current, &m.InternetProductsResponse{
 		Products:   []m.InternetProduct{},
 		NextCursor: "",
