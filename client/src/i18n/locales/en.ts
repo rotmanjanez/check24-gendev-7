@@ -21,7 +21,7 @@ export default {
         years: "years",
         over: "over",
         contractDurationMonth: "months contract",
-        share: "Share this offer",
+        share: "Share offers",
         copyToClipboard: "Share link copied to clipboard",
         offeredOn: "Offer from",
         showMore: "Show more",
@@ -115,7 +115,6 @@ export default {
                 invalid_type: "Country code is invalid",
             }
         },
-        submit: "Compare Now",
     },
     errors: {
         unknown: "An unknown error occurred.",
