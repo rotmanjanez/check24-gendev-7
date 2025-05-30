@@ -42,6 +42,8 @@ type Config struct {
 	// default: empty
 	CommitHash string
 
+	UseInProcessCache bool `json:"useInProcessCache"`
+
 	Redis *redis.Options `json:"redis"`
 
 	Backends map[string]BackendConfig `json:"backends"`
