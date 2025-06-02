@@ -104,6 +104,12 @@ func (s *InternetProductsAPIService) processRequest(ctx context.Context, address
 	current := cursor
 	next := uuid.New().String()
 
+	// set the initial cursor in the queue to indicate work in progress
+	err := s.queue.Set(ctx, current, &m.InternetProductsResponse{NextCursor: workInProgressIndicator}, time.Duration(15*time.Minute))
+	if err != nil {
+		slog.Error("Error setting next cursor in cache", "error", err)
+	}
+
 	for prod := range prods {
 		slog.Debug("Fetched product", "product", prod.Name, "cursor", current, "next", next)
 		products = append(products, prod)
@@ -130,7 +136,7 @@ func (s *InternetProductsAPIService) processRequest(ctx context.Context, address
 
 	// add a final entry to the queue with the last cursor
 	slog.Debug("Adding final product to queue", "cursor", current, "next", "")
-	err := s.queue.Set(ctx, current, &m.InternetProductsResponse{
+	err = s.queue.Set(ctx, current, &m.InternetProductsResponse{
 		Products:   []m.InternetProduct{},
 		NextCursor: "",
 	}, time.Duration(1*time.Hour))

@@ -231,7 +231,7 @@ func (suite *E2ETestSuite) pollForResults(t *testing.T, cursor string, timeout t
 			t.Fatalf("Failed to poll results: %v", err)
 		}
 
-		if resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusAccepted {
 			// No more results yet, wait and try again
 			resp.Body.Close()
 			time.Sleep(500 * time.Millisecond)
