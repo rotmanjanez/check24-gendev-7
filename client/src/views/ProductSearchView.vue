@@ -205,7 +205,9 @@ onMounted(() => {
       })
       .catch(e => {
         console.error('Failed to load shared products', e)
-        error.value = 'network'
+        error.value = e.code === 404 ? 'invalidShare' :
+          e.code === 500 ? 'network'
+            : 'unknown'
       })
       .finally(() => {
         loading.value = false

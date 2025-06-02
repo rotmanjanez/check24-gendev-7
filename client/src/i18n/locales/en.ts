@@ -119,6 +119,7 @@ export default {
     errors: {
         unknown: "An unknown error occurred.",
         network: "Network error occurred.",
+        invalidShare: "Invalid share link.",
     },
     notifications: {
         newOffers: "New offers available",

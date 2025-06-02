@@ -127,6 +127,7 @@ export default {
     errors: {
         unknown: "Ein unbekannter Fehler ist aufgetreten.",
         network: "Ein Netzwerkfehler ist aufgetreten :(",
+        invalidShare: "Ungültiger Freigabelink.",
     },
     productFilter: {
         title: "Angebote filtern",
