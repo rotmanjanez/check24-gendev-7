@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AddressCard from '@/components/AddressCard.vue'
 import InternetProductCard from '@/components/InternetProductCard.vue'
@@ -18,14 +18,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
 import type { QueryOptions } from '@/components/AddressCard.vue'
-import type { Address, InternetProduct, CountryCode, InternetProductsResponse } from '@/api'
+import type { Address, InternetProduct, InternetProductsResponse } from '@/api'
 import { createConfiguration, InternetProductsApi, prod, dev } from '@/api'
 import { getAverageMonthlyCost } from '@/types/ProductContext'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 
-const address = ref<Address>({ street: '', houseNumber: '', postalCode: '', city: '', countryCode: 'De' as CountryCode })
+const address = ref<Address | null>(null)
 const products = ref<InternetProduct[]>([])
 const sortedProducts = ref<InternetProduct[]>([])
 const version = ref('')
@@ -134,6 +135,13 @@ async function fetchProducts(reset = true) {
   if (reset) { products.value = []; sortedProducts.value = []; currentPage.value = 1; highestPage.value = 1 }
   error.value = null
   toast.dismiss(toastId)
+
+  if (address.value === null) {
+    error.value = 'unknown'
+    loading.value = false
+    return;
+  }
+
   try {
     const resp = await api.initiateInternetProductsQuery(address.value)
     version.value = resp.version || ''
@@ -190,15 +198,12 @@ onMounted(() => {
     addressDisplayMode.value = true
     api.getSharedInternetProducts(cursor)
       .then(resp => {
-        if (resp.address) {
+        if (resp.address && resp.products) {
           address.value = resp.address
-        }
-        if (resp.products && resp.products.length > 0) {
           products.value = resp.products
           sortedProducts.value = [...products.value]
           version.value = resp.version || ''
           requestCursor.value = cursor
-          console.log(`Loaded ${resp.products.length} shared products for cursor: ${cursor}`)
         } else {
           error.value = 'noResults'
         }
@@ -207,7 +212,8 @@ onMounted(() => {
         console.error('Failed to load shared products', e)
         error.value = e.code === 404 ? 'invalidShare' :
           e.code === 500 ? 'network'
-            : 'unknown'
+            : 'unknown';
+        address.value = null
       })
       .finally(() => {
         loading.value = false
@@ -230,8 +236,14 @@ function resetOptions() {
 <template>
   <div class="px-6 max-w-3xl mx-auto">
     <AddressCard
-      @submit="async (addr: Address) => { address = addr; await fetchProducts(); addressDisplayMode = false; }"
+      @submit="async (addr: Address) => { 
+        router.push({ query: {} })
+        address = addr; 
+        await fetchProducts(); 
+        addressDisplayMode = false;
+      }"
       @update-query="handleQueryUpdate" @reset="resetOptions" :product-count="products.length"
+      :address="route.query.cursor ? address : null"
       :force-display-mode="addressDisplayMode" :query-options="queryOptions" class="mb-4">
       <ShareButton :hash-route="'?cursor=' + requestCursor" :prepare="prepareShare">
         {{ t('product.share') }}
@@ -256,7 +268,7 @@ function resetOptions() {
       </div>
 
       <InternetProductCard v-else-if="paginatedProducts.length > 0" v-for="product in paginatedProducts"
-        :key="product.id" :product-context="{ address, product, version }" />
+        :key="product.id" :product-context="address ? { address, product, version } : undefined" />
 
       <!-- Show loading indicators for additional products being fetched -->
       <InternetProductCard v-if="fetching && !loading && paginatedProducts.length < itemsPerPage"

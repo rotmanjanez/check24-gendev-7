@@ -65,6 +65,7 @@ const props = defineProps<{
   productCount: number
   forceDisplayMode?: boolean
   queryOptions: QueryOptions
+  address: Address | null
 }>()
 
 const emit = defineEmits<{
@@ -73,12 +74,16 @@ const emit = defineEmits<{
   (e: 'reset'): void
 }>()
 
+watch(() => props.address, (newAddress) => {
+  address.value = newAddress
+})
+
 // ------------- i18n -------------
 const { t } = useI18n()
 
 // ------------- State Management -------------
 const isSubmitted = ref(false)
-const address = ref<Address | null>(null)
+const address = ref<Address | null>(props.address)
 const STORAGE_KEY = 'addressForm'
 
 // ------------- Address Form Logic -------------
@@ -101,16 +106,23 @@ const formSchema = toTypedSchema(z.object({
 }))
 
 function loadInitialValues() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      address.value = parsed;
-      // Merge street and houseNumber for the input field
-      return { ...parsed, street: `${parsed.street}${parsed.houseNumber ? ' ' + parsed.houseNumber : ''}` };
-    }
-  } catch { /* ignore errors */ }
-  return { street: '', postalCode: '', city: '', countryCode: 'DE' }
+  if (props.address) {
+    address.value = props.address;
+  } else {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        address.value = parsed;
+      }
+    } catch { /* ignore errors */ }
+  }
+  if (address.value === null) {
+    return { street: '', postalCode: '', city: '', countryCode: 'DE' as CountryCode };
+  }
+  // Merge street and houseNumber for the input field
+  return { ...address.value, street: `${address.value.street}${address.value.houseNumber ? ' ' + address.value.houseNumber : ''}` };
+
 }
 
 
