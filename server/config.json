@@ -20,7 +20,7 @@
             }
         },
         "ByteMe": {
-            "enabled": false,
+            "enabled": true,
             "retries": 3,
             "timeout": 2500,
             "maxConcurrent": 1,
@@ -40,7 +40,7 @@
             }
         },
         "ServusSpeed": {
-            "enabled": false,
+            "enabled": true,
             "retries": 3,
             "timeout": 25000,
             "maxConcurrent": 3,
@@ -51,7 +51,7 @@
             }
         },
         "VerbynDich": {
-            "enabled": false,
+            "enabled": true,
             "retries": 3,
             "timeout": 2500,
             "maxConcurrent": 5,
@@ -62,7 +62,7 @@
             }
         },
         "WebWunder": {
-            "enabled": false,
+            "enabled": true,
             "retries": 3,
             "timeout": 25000,
             "maxConcurrent": 6,
